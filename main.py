@@ -12,26 +12,6 @@ from PIL import Image
 from sqlalchemy import Column, String, Date, create_engine, and_
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-email_server_address = 'smtp.gmail.com'
-email_server_port = 587
-email_sender_address = 'sender_address'
-email_sender_pass = 'sender_password'
-email_receiver_address = 'receiver_address'
-
-keywords = ['Elsdorf', 'Bockhorst', 'Badenhorst', 'Wistedt']
-
-undertakers = [
-    {
-        'identifier': 'oehrding',
-        'base_url': 'https://oerding.gemeinsam-trauern.net'
-    },
-    {
-        'identifier': 'bahrenburg',
-        'base_url': 'https://gemeinsam-trauern.bahrenburg-bestattungen.de'
-    }
-]
-
-
 Base = declarative_base()
 
 

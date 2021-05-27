@@ -1,0 +1,21 @@
+email:
+  server_address: "smtp.gmail.com"
+  server_port: 587
+  sender_address: "sender_address"
+  sender_password: "sender_password"
+  receiver_addresses:
+    - "receiver_address"
+
+
+keywords:
+  - "Elsdorf"
+  - "Bockhorst"
+  - "Badenhorst"
+  - "Wistedt"
+
+
+undertakers:
+  - identifier: 'oehrding'
+    base_url: 'https://oerding.gemeinsam-trauern.net'
+  - identifier: 'oehrding'
+    base_url: 'https://oerding.gemeinsam-trauern.net'
