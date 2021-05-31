@@ -1,4 +1,4 @@
-email:
+notifier:
   server_address: "smtp.gmail.com"
   server_port: 587
   sender_address: "sender_address"
