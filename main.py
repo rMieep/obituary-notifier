@@ -15,14 +15,6 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 Base = declarative_base()
 
 
-class Obituary(Base):
-    __tablename__ = "obituary"
-    id = Column(String(30), primary_key=True)
-    name = Column(String(30))
-    expiration_date = Column(Date)
-    undertaker = Column(String(20), primary_key=True)
-
-
 def exists(session, obituary):
     return bool(session.query(Obituary).filter(and_(Obituary.id == obituary.id, Obituary.undertaker == obituary.undertaker)).first())
 
