@@ -15,6 +15,8 @@ from models import Obituary
 
 
 class EMailClient(ABC):
+    """Abstract EMailClient that allows to send emails"""
+
     def __init__(self, sender_address: str):
         self._sender_address = sender_address
 
@@ -40,6 +42,7 @@ class EMailClient(ABC):
 
 
 class GMailClient(EMailClient):
+    """Concrete EMailClient that uses the GMail API to send emails"""
     def __init__(self, sender_address: str, receiver_addresses: List[str], credentials_path: str = "credentials.json"):
         super(GMailClient, self).__init__(sender_address)
         self._receiver_addresses = receiver_addresses
@@ -80,10 +83,11 @@ class GMailClient(EMailClient):
         self._service.close()
 
 
-class TLSEMailClient(EMailClient):
+class SMTPEMailClient(EMailClient):
+    """Concrete EMailClient that uses SMTP to send emails"""
     def __init__(self, server_address: str, server_port: int, sender_address: str, sender_password: str,
                  receiver_addresses: List[str]):
-        super(TLSEMailClient, self).__init__(sender_address)
+        super(SMTPEMailClient, self).__init__(sender_address)
 
         self._server_address = server_address
         self._server_port = server_port
@@ -96,7 +100,7 @@ class TLSEMailClient(EMailClient):
         self._session.login(self._sender_address, self._sender_pass)
 
     def _build_mail(self, receiver_address: str, subject: str, content: str):
-        return super(TLSEMailClient, self)._build_mail(receiver_address, subject, content).as_string()
+        return super(SMTPEMailClient, self)._build_mail(receiver_address, subject, content).as_string()
 
     def send(self, subject: str, content: str):
         for receiver_address in self._receiver_addresses:
@@ -111,12 +115,14 @@ class TLSEMailClient(EMailClient):
 
 
 class Notifier(ABC):
+    """ Abstract Notifier that notifies external users about an obituary"""
     @abstractmethod
     def notify(self, obituary: Obituary):
         raise NotImplemented
 
 
 class EMailNotifier(Notifier):
+    """Concrete notifier that notifies external users via email"""
     def __init__(self, email_client: EMailClient):
         self._client = email_client
 

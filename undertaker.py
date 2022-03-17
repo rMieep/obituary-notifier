@@ -11,29 +11,42 @@ from models import Obituary
 
 
 class Undertaker(ABC):
+    """ An abstract Undertaker class
+    Used to fetch obituaries and their descriptions
+
+    Args:
+        identifier: An unique identifier for that undertaker
+        base_url: The base url used to query its obituaries
+        max_death_age_in_days: The number of days an obituary should be considered
+    """
+
+    def __init__(self, identifier: str, base_url: str, max_death_age_in_days: int = 14):
+        self._identifier = identifier
+        self._base_url = base_url
+        self._max_death_age_in_days = max_death_age_in_days
+
     @abstractmethod
     def get_description(self, obituary: Obituary) -> str:
-        raise NotImplemented
+        raise NotImplementedError
 
     @abstractmethod
     def get_obituaries(self) -> List[Obituary]:
-        raise NotImplemented
+        raise NotImplementedError
 
 
-class UndertakerImp(Undertaker):
-    def __init__(self, identifier: str, base_url: str, max_death_age_in_days: int = 14):
-        self.identifier = identifier
-        self.base_url = base_url
-        self.max_death_age_in_days = max_death_age_in_days
+class UndertakerImpl(Undertaker):
+    """ Concrete Undertaker used for local undertakers Oehrding and Bahrenburg.
+    As both of them use the same backend only one Undertaker implementation is, as of now, needed.
 
+    """
     def get_description(self, obituary: Obituary) -> str:
         return self._get_text_from_image(self._get_image_from_url(obituary.image_link))
 
     def get_obituaries(self) -> List[Obituary]:
         return self._filter_obituaries(self._parse_obituaries(self._fetch_obituaries()))
 
-    def _fetch_obituaries(self) -> List:
-        response = requests.get(self.base_url + '/json/OrdersPage?nr=1&size=20')
+    def _fetch_obituaries(self) -> List[Dict]:
+        response = requests.get(self._base_url + '/json/OrdersPage?nr=1&size=20')
         if response.ok:
             return response.json()['orders']
 
@@ -47,10 +60,10 @@ class UndertakerImp(Undertaker):
             parsed_obituaries.append(Obituary(
                 name=obituary['fullName'],
                 date_of_death=date_of_death,
-                expiration_date=date_of_death + timedelta(days=self.max_death_age_in_days),
-                undertaker=self.identifier,
-                link=self.base_url + obituary['relativeUri'],
-                image_link=self.base_url + obituary['imageUri']
+                expiration_date=date_of_death + timedelta(days=self._max_death_age_in_days),
+                undertaker=self._identifier,
+                link=self._base_url + obituary['relativeUri'],
+                image_link=self._base_url + obituary['imageUri']
             ))
 
         return parsed_obituaries
@@ -61,10 +74,10 @@ class UndertakerImp(Undertaker):
         return list(filter(lambda obituary: obituary.expiration_date >= today, obituaries))
 
     @staticmethod
-    def _get_text_from_image(image: Image) -> str:
-        return pytesseract.image_to_string(image, lang='deu')
-
-    @staticmethod
     def _get_image_from_url(url: str) -> Image:
         return Image.open(requests.get(url, stream=True).raw)
+
+    @staticmethod
+    def _get_text_from_image(image: Image) -> str:
+        return pytesseract.image_to_string(image, lang='deu')
 

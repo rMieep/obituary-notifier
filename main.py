@@ -1,23 +1,46 @@
 from typing import List
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker
 
 from db import ObituaryRepositoryImpl, ObituaryRepository
 from models import Base
 from notifier import Notifier, EMailNotifier, GMailClient
-from undertaker import Undertaker, UndertakerImp
-
-keywords = ["Elsdorf", "Bockhorst", "Badenhorst", "Wistedt"]
+from undertaker import Undertaker, UndertakerImpl
 
 engine = create_engine('sqlite:///obituary.db')
 Base.metadata.create_all(engine)
-MySession = sessionmaker(bind=engine)
+Session = sessionmaker(bind=engine)
+
+
+def main():
+    keywords = create_keywords()
+    undertakers = create_undertakers()
+    notifiers = create_notifier()
+
+    with Session() as session, session.begin():
+        repo = create_obituary_repository(session)
+        for undertaker in undertakers:
+            obituaries = undertaker.get_obituaries()
+
+            for obituary in obituaries:
+                if not repo.exists(obituary):
+                    repo.add(obituary)
+                    description = undertaker.get_description(obituary)
+                    if any(word in description for word in keywords):
+                        for notifier in notifiers:
+                            notifier.notify(obituary)
+
+        repo.delete_expired()
+
+
+def create_keywords() -> List[str]:
+    return ["Elsdorf", "Bockhorst", "Badenhorst", "Wistedt"]
 
 
 def create_undertakers() -> List[Undertaker]:
-    return [UndertakerImp(identifier='oehrding', base_url='https://oerding.gemeinsam-trauern.net'),
-            UndertakerImp(identifier='bahrenburg', base_url='https://gemeinsam-trauern.bahrenburg-bestattungen.de')]
+    return [UndertakerImpl(identifier='oehrding', base_url='https://oerding.gemeinsam-trauern.net'),
+            UndertakerImpl(identifier='bahrenburg', base_url='https://gemeinsam-trauern.bahrenburg-bestattungen.de')]
 
 
 def create_notifier() -> List[Notifier]:
@@ -32,20 +55,4 @@ def create_obituary_repository(curr_session: Session) -> ObituaryRepository:
 
 
 if __name__ == '__main__':
-    undertakers = create_undertakers()
-    notifiers = create_notifier()
-
-    with MySession() as session, session.begin():
-        repo = create_obituary_repository(session)
-        for undertaker in undertakers:
-            obituaries = undertaker.get_obituaries()
-
-            for obituary in obituaries:
-                if not repo.exists(obituary):
-                    repo.add(obituary)
-                    description = undertaker.get_description(obituary)
-                    if any(word in description for word in keywords):
-                        for notifier in notifiers:
-                            notifier.notify(obituary)
-
-        repo.delete_expired()
+    main()
