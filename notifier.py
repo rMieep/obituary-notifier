@@ -1,8 +1,8 @@
 import os
+from abc import ABC
 from base64 import urlsafe_b64encode
-from smtplib import SMTP
-from abc import abstractmethod, ABC
 from email.mime.text import MIMEText
+from smtplib import SMTP
 from typing import List
 
 from googleapiclient import errors
