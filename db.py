@@ -1,47 +1,38 @@
-from abc import ABCMeta, abstractmethod
-from datetime import timedelta, date
+from abc import ABC, abstractmethod
+from datetime import date
 
-from sqlalchemy import create_engine, and_
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 
-from models import Base, Obituary
+from models import Obituary
 
 
-class ObituaryDB:
-    __metaclass__ = ABCMeta
-
+class ObituaryRepository(ABC):
     @abstractmethod
-    def add(self, obituary: Obituary) -> Obituary:
-        raise NotImplemented
+    def add(self, obituary: Obituary):
+        raise NotImplementedError
 
     @abstractmethod
     def exists(self, obituary: Obituary) -> bool:
-        raise NotImplemented
+        raise NotImplementedError
 
     @abstractmethod
-    def clean_up_expired(self):
-        raise NotImplemented
+    def delete_expired(self):
+        raise NotImplementedError
 
 
-class SQLiteObituaryDB(ObituaryDB):
-
-    def __init__(self, path_to_db: str = 'obituary.db'):
-        engine = create_engine('sqlite:///' + path_to_db)
-        Base.metadata.create_all(engine)
-
-        Session = sessionmaker(bind=engine)
-        self.__session = Session()
+class ObituaryRepositoryImpl(ObituaryRepository):
+    def __init__(self, session: Session):
+        self._session = session
 
     def add(self, obituary: Obituary):
-        self.__session.add(obituary)
+        self._session.add(obituary)
 
     def exists(self, obituary: Obituary) -> bool:
-        return self.__session.query(Obituary).filter(and_(
-            Obituary.id == obituary.identifier,
-            Obituary.undertaker == obituary.undertaker_identifier
-        )).exists()
+        return self._session.query(Obituary.link, Obituary.undertaker)\
+            .filter(Obituary.link == obituary.link)\
+            .filter(Obituary.undertaker == obituary.undertaker)\
+            .first() is not None
 
-    def clean_up_expired(self):
-        self.__session.query(Obituary).delete().where(Obituary.expiration_date < date.today())
-
-
+    def delete_expired(self):
+        today = date.today()
+        self._session.query(Obituary).filter(Obituary.expiration_date < today).delete()

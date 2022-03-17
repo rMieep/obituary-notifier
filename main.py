@@ -1,77 +1,51 @@
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from smtplib import SMTP
+from typing import List
 
-import requests
-import locale
-import pytesseract
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
 
-from datetime import datetime, date, timedelta
+from db import ObituaryRepositoryImpl, ObituaryRepository
+from models import Base
+from notifier import Notifier, EMailNotifier, GMailClient
+from undertaker import Undertaker, UndertakerImp
 
-from PIL import Image
-from sqlalchemy import Column, String, Date, create_engine, and_
-from sqlalchemy.orm import declarative_base, sessionmaker
+keywords = ["Elsdorf", "Bockhorst", "Badenhorst", "Wistedt"]
 
-Base = declarative_base()
+engine = create_engine('sqlite:///obituary.db')
+Base.metadata.create_all(engine)
+MySession = sessionmaker(bind=engine)
 
 
-def exists(session, obituary):
-    return bool(session.query(Obituary).filter(and_(Obituary.id == obituary.id, Obituary.undertaker == obituary.undertaker)).first())
+def create_undertakers() -> List[Undertaker]:
+    return [UndertakerImp(identifier='oehrding', base_url='https://oerding.gemeinsam-trauern.net'),
+            UndertakerImp(identifier='bahrenburg', base_url='https://gemeinsam-trauern.bahrenburg-bestattungen.de')]
+
+
+def create_notifier() -> List[Notifier]:
+    return [EMailNotifier(GMailClient(
+        sender_address="sender_address",
+        receiver_addresses=["receiver_address"]
+    ))]
+
+
+def create_obituary_repository(curr_session: Session) -> ObituaryRepository:
+    return ObituaryRepositoryImpl(curr_session)
 
 
 if __name__ == '__main__':
-    engine = create_engine('sqlite:///obituary.db')
-    Base.metadata.create_all(engine)
+    undertakers = create_undertakers()
+    notifiers = create_notifier()
 
-    Session = sessionmaker(bind=engine)
-    db_session = Session()
+    with MySession() as session, session.begin():
+        repo = create_obituary_repository(session)
+        for undertaker in undertakers:
+            obituaries = undertaker.get_obituaries()
 
-    for undertaker in undertakers:
-        response = requests.get(undertaker['base_url'] + '/json/OrdersPage?nr=1&size=20')
-        data = []
-        if response.ok:
-            data = response.json()['orders']
+            for obituary in obituaries:
+                if not repo.exists(obituary):
+                    repo.add(obituary)
+                    description = undertaker.get_description(obituary)
+                    if any(word in description for word in keywords):
+                        for notifier in notifiers:
+                            notifier.notify(obituary)
 
-        obituaries = []
-
-        for item in data:
-            obituary_identifier = item['relativeUri'].split('/')[2]
-            locale.setlocale(locale.LC_TIME, '')
-            date_of_death = datetime.strptime(item['dateOfDeath'], '%d. %B %Y').date()
-
-            obituaries.append(Obituary(
-                id=obituary_identifier,
-                name=item['fullName'],
-                expiration_date=date_of_death + timedelta(days=14),
-                undertaker=undertaker['identifier']
-            ))
-
-        obituaries = list(filter(lambda obituary: obituary.expiration_date > date.today(), obituaries))
-
-        for obituary in obituaries:
-            if not exists(db_session, obituary):
-                db_session.add(obituary)
-                info = pytesseract.image_to_string(
-                    Image.open(requests.get(
-                        undertaker['base_url'] + '/Begleiten/' + obituary.id + "/Profilbild", stream=True).raw),
-                    lang='deu'
-                )
-                if any(word in info for word in keywords):
-                    email_session = SMTP(email_server_address, email_server_port)
-                    email_session.starttls()
-                    email_session.login(email_sender_address, email_sender_pass)
-
-                    message = MIMEMultipart()
-                    message['From'] = email_sender_address
-                    message['To'] = email_receiver_address
-                    message['Subject'] = 'Nachruf ' + obituary.name
-                    message.attach(MIMEText(undertaker['base_url'] + '/Begleiten/' + obituary.id, 'plain'))
-
-                    mail = message.as_string()
-                    email_session.sendmail(email_sender_address, email_receiver_address, mail)
-
-                    email_session.quit()
-
-    db_session.query(Obituary).filter(Obituary.expiration_date < date.today()).delete()
-    db_session.commit()
-    db_session.close()
+        repo.delete_expired()
