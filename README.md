@@ -47,7 +47,7 @@ This interface can be extended to provide a custom database implementation. A de
    ```
 2. Install pip packages
    ```sh
-   pip install -r requiremtens.text
+   pip install -r requirements.txt
    ```
 3. Inject your dependencies in `main.py`
    * create_keywords()
