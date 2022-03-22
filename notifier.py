@@ -1,5 +1,5 @@
 import os
-from abc import ABC
+from abc import ABC, abstractmethod
 from base64 import urlsafe_b64encode
 from email.mime.text import MIMEText
 from smtplib import SMTP
