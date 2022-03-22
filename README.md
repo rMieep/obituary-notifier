@@ -66,13 +66,13 @@ The project currently runs on a rasberry pi and is executed every morning at 7am
 The bash script:
 ```sh
    #!/bin/bash
-   source /home/pi/Code/obituary-notifier/venv/bin/activate
+   source /home/pi/obituary-notifier/venv/bin/activate
    pip install -r requirements.txt
    python3 main.py
    ```
 The cron job:
 ```sh
-   0 7 * * * /bin/bash /home/pi/Code/obituary-notifier/runner.sh
+   0 7 * * * /bin/bash /home/pi/obituary-notifier/runner.sh
    ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
