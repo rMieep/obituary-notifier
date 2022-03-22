@@ -62,6 +62,7 @@ This interface can be extended to provide a custom database implementation. A de
 ## Usage
 
 The project currently runs on a rasberry pi and is executed every morning at 7am. The project is used to notify people from my village about current funerals so that they can either attend them or write their condolences. Otherwise they would have to check the websites of the local undertakers frequently. The program is executed using a cron job as well as a bash script to activate the virtual enviroment and load the dependencies.
+
 The bash script:
 ```sh
    #!/bin/bash
