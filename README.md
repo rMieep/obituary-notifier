@@ -12,7 +12,7 @@ Obituary Notifier is a small framework that can be used to fetch obitauries from
 
 ### Extension Points
 #### Undertaker
-This interface can be extended to provide an implementation for an specific undertaker. The interface exposes two methods:
+This interface can be extended to provide an implementation for a specific undertaker. The interface exposes two methods:
 
 * get_obituaries(): Fetches a list of obituaries from the undertaker
 * get_description(obituary): Fetches the description of an obituary from that undertaker
@@ -23,14 +23,14 @@ This interface can be extended to notify external users about matching obituarie
 * notify(obituary): Notifies the external user about the obituary
 
 #### EMailClient
-This interface can be extended to provide a custom EMailClient. Currently the framework provides two implementations. The GMailClient and the SMTPEMailClient. The GMailClient uses the GMail API for authentication and sending emails while the SMTPEMailClient uses SMTP and TLS for autentication and sending emails. The Interface exposes a context manager one public mehtod and one private mthode:
+This interface can be extended to provide a custom EMailClient. Currently the framework provides two implementations. The GMailClient and the SMTPEMailClient. The GMailClient uses the GMail API for authentication and sending emails while the SMTPEMailClient uses SMTP and TLS. The Interface exposes a context manager, a public and a private mthode:
 
 * context manager: Authenticates the user
 * send(subject, message): sends the email
 * _build_email(receiver_address, subject, message): builds the email object
 
 #### ObituaryRepository
-This interface can be extended to provide a custom database implementation. A default implementation using a local SQLite db is provided. The interface exposes three methods:
+This interface can be extended to provide a custom database implementation. A default implementation using a local SQLite database is provided. The interface exposes three methods:
 
 * add(obituary): Adds obituary to db
 * exists(obituary): Checks if the obituary already exists in the db
@@ -61,7 +61,7 @@ This interface can be extended to provide a custom database implementation. A de
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-The project currently runs on a rasberry pi and is executed every morning at 7am. The project is used to notify people from my village about current funerals so that they can either attend them or write their condolences. Otherwise they would have to check the websites of the local undertakers frequently. The program is executed using a cron job as well as a bash script to activate the virtual enviroment and load the dependencies.
+The project currently runs on a rasberry pi and is executed every morning. The project is used to notify people from my village about current funerals so that they can either attend them or write their condolences. Otherwise they would have to check the websites of the local undertakers frequently. The program is executed using a cron job as well as a bash script to activate the virtual enviroment and load the dependencies.
 
 The bash script:
 ```sh
